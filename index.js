@@ -2,6 +2,7 @@ const axios = require("axios");
 const express = require("express");
 const cors = require("cors");
 const moment = require("moment");
+const path = require("path");
 moment.locale("de");
 
 const app = express();
@@ -18,53 +19,6 @@ const refreshData = async () => {
 
 refreshData();
 setInterval(refreshData, 1000 * 60 * 60 * 24);
-
-const HTML_OVERLAY_TOP = `
-<!DOCTYPE html>
-<html lang="de">
-<head>
-    <meta charset="UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta http-equiv="refresh" content="30">
-    <style>
-    @font-face {
-        font-family: Belmont;
-        src: url(/static/Belmont_Regular.otf);
-    }
-    * {
-        font-family: 'Belmont';
-    }
-
-    .player1 {
-        font-size: 25px;
-        color: rgb(0, 160, 255);
-        text-shadow: 1px 1px #000;
-    }
-
-    .player2 {
-        font-size: 25px;
-        color: #d90000;
-        text-shadow: 1px 1px #000;
-    }
-
-    .mapType {
-        font-size: 23px;
-        color: white;
-        text-align: center;
-    }
-
-    table{
-        padding: 10px;
-        background: rgb(0,0,0);
-        background: radial-gradient(circle, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0) 100%);
-    }
-
-    </style>
-</head><body>`
-
-const HTML_OVERLAY_BOT = `
-</html></body>`
 
 app.get("/rank", async (req, res) => {
   let params = {
@@ -150,72 +104,81 @@ app.get("/match", async (req, res) => {
   }
 });
 
-app.use('/static',express.static('files'));
+app.use("/static", express.static("files"));
 
 app.get("/overlay", async (req, res) => {
+  res.sendFile(path.resolve(".", "index.html"));
+  return;
+});
+
+app.get("/overlayData", async (req, res) => {
   let params = {
     game: "aoe4",
     count: 1,
+    start: 0,
     steam_id: "76561198012752362",
   };
-
-  const sendStyle = (code = '') => {
-      return `${HTML_OVERLAY_TOP}${code}${HTML_OVERLAY_BOT}`
-  }
-
   try {
     let data = await axios.get(`https://aoeiv.net/api/player/matches`, {
       params,
     });
+    let output = {
+      success: true,
+      id: null,
+      html: null,
+    };
     if (data.status !== 200) throw `Ups! Fehler bei der Schnittstellenanfrage!`;
     data = data.data;
     if (data.length < 1) {
-      res.send(sendStyle());
+      res.json({ success: false });
     } else {
       data = data[0];
       if (data.num_players > 2) {
-        res.send(sendStyle());
+        res.json({
+          success: false,
+          playerCount: data.num_players,
+          id: data.match_id,
+        });
         return;
       }
       let mapType = globalData.map_type.find((x) => x.id === data.map_type);
-      mapType = mapType ? mapType.string : '';
+      mapType = mapType ? mapType.string : "";
       let players = [];
       for (let p of data.players) {
         let civ = globalData.civ.find((x) => x.id === p.civ);
         civ = civ ? civ.string : null;
-        players.push(
-          {
-             rating: p.rating,
-             name: p.name,
-             civ: civ ? `${civ.substring(0,3)}` : "" 
-          }
-        );
+        players.push({
+          rating: p.rating,
+          name: p.name,
+          civ: civ ? `${civ.substring(0, 3)}` : "",
+        });
       }
-
-      res.send(sendStyle(`
-        <body>
-                <table>
-                <tr class="player1">
-                    <td>(${players[0].rating})</td>
-                    <td>${players[0].name}</td>
-                    <td>| ${players[0].civ}</td>
-                </tr>
-                <tr class="player2">
-                    <td>(${players[1].rating})</td>
-                    <td>${players[1].name}</td>
-                    <td>| ${players[1].civ}</td>
-                </tr>
-                <tr class="mapType">
-                    <td colspan="2">${mapType}</td>
-                </tr>
-                </table>
-        </body>
-        </html>      
-      `));
+      output.html = `
+      <body>
+              <table>
+              <tr class='player1'>
+                  <td>(${players[0].rating})</td>
+                  <td>${players[0].name}</td>
+                  <td>| ${players[0].civ}</td>
+              </tr>
+              <tr class='player2'>
+                  <td>(${players[1].rating})</td>
+                  <td>${players[1].name}</td>
+                  <td>| ${players[1].civ}</td>
+              </tr>
+              <tr class='mapType'>
+                  <td colspan='2'>${mapType}</td>
+              </tr>
+              </table>
+      </body>
+      </html>      
+    `.replace(/\n/g, "");
+      output.id = data.match_id;
+      res.json(output);
     }
   } catch (err) {
     console.error(new Error(err));
-    res.send(sendStyle());
+    res.json({ success: false });
   }
 });
 

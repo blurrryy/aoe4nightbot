@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+      @font-face {
+        font-family: Belmont;
+        src: url(/static/Belmont_Regular.otf);
+      }
+      * {
+        font-family: "Belmont";
+      }
+
+      .player1 {
+        font-size: 25px;
+        color: rgb(0, 160, 255);
+        text-shadow: 1px 1px #000;
+      }
+
+      .player2 {
+        font-size: 25px;
+        color: #d90000;
+        text-shadow: 1px 1px #000;
+      }
+
+      .mapType {
+        font-size: 23px;
+        color: white;
+        text-align: center;
+      }
+
+      table {
+        padding: 10px;
+        background: rgb(0, 0, 0);
+        background: radial-gradient(
+          circle,
+          rgba(0, 0, 0, 0.75) 0%,
+          rgba(0, 0, 0, 0) 100%
+        );
+      }
+
+      .visible {
+        visibility: visible;
+        opacity: 1;
+        transition: opacity 0.3s linear;
+      }
+
+      .hidden {
+        visibility: hidden;
+        opacity: 0;
+        transition: visibility 0s 0.3s, opacity 0.3s linear;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app" class="hidden"></div>
+  </body>
+
+  <script>
+    let lastMatchId = null;
+    let app = document.getElementById("app");
+    (() => {
+      const refreshContent = () => {
+        console.log(`Loading Overlay Content`);
+        fetch("/overlayData")
+          .then((res) => {
+            if (res.status === 200) return res.json();
+            else console.error("Unable to fetch data");
+          })
+          .then((res) => {
+            if (!res.success) {
+              if(res.playerCount && res.playerCount > 2) {
+                  lastMatchId = res.id;
+                  app.classList.remove('visible');
+                  app.classList.add('hidden');
+                  return;
+              }
+              console.error("Unable to read data");
+              return;
+            }
+            if (lastMatchId !== res.id) {
+              if(!!lastMatchId) {
+                  app.classList.remove('visible');
+                  app.classList.add('hidden');
+              }
+              lastMatchId = res.id;
+              app.innerHTML = res.html;
+              app.classList.remove('hidden');
+              app.classList.add('visible');
+            }
+          });
+      };
+      refreshContent();
+      setInterval(refreshContent, 30000);
+    })();
+  </script>
+</html>
