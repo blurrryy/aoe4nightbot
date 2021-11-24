@@ -49,7 +49,7 @@ const HTML_OVERLAY_TOP = `
     }
 
     .mapType {
-        font-size: 20px;
+        font-size: 23px;
         color: white;
         text-align: center;
     }
@@ -57,7 +57,7 @@ const HTML_OVERLAY_TOP = `
     table{
         padding: 10px;
         background: rgb(0,0,0);
-        background: radial-gradient(circle, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0) 100%);
+        background: radial-gradient(circle, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0) 100%);
     }
 
     </style>
