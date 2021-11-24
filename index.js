@@ -38,24 +38,28 @@ const HTML_OVERLAY_TOP = `
 
     .player1 {
         font-size: 25px;
-        color: rgb(0, 0, 255);
+        color: rgb(0, 160, 255);
+        text-shadow: 1px 1px #000;
     }
 
     .player2 {
         font-size: 25px;
-        color: red;
+        color: #d90000;
+        text-shadow: 1px 1px #000;
     }
 
-    .titlesTop {
-        font-size: 30px;
+    .mapType {
+        font-size: 20px;
         color: white;
-        text-decoration: underline;
+        text-align: center;
     }
-    .titlesBot {
-        font-size: 25px;
-        color: white;
-        text-decoration: overline;
+
+    table{
+        padding: 10px;
+        background: rgb(0,0,0);
+        background: radial-gradient(circle, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0) 100%);
     }
+
     </style>
 </head><body>`
 
@@ -180,16 +184,31 @@ app.get("/overlay", async (req, res) => {
         let civ = globalData.civ.find((x) => x.id === p.civ);
         civ = civ ? civ.string : null;
         players.push(
-          `(${p.rating}) ${p.name} | ${civ ? `${civ.substring(0,3)}` : ""}`
+          {
+             rating: p.rating,
+             name: p.name,
+             civ: civ ? `${civ.substring(0,3)}` : "" 
+          }
         );
       }
 
       res.send(sendStyle(`
         <body>
-            <span class="titlesTop">Aktuellstes Spiel</span><br>
-            <span class="player1">${players[0]}</span><br>
-            <span class="player2">${players[1]}</span><br>
-            <span class="titlesBot">${mapType}</span><br>
+                <table>
+                <tr class="player1">
+                    <td>(${players[0].rating})</td>
+                    <td>${players[0].name}</td>
+                    <td>| ${players[0].civ}</td>
+                </tr>
+                <tr class="player2">
+                    <td>(${players[1].rating})</td>
+                    <td>${players[1].name}</td>
+                    <td>| ${players[1].civ}</td>
+                </tr>
+                <tr class="mapType">
+                    <td colspan="2">${mapType}</td>
+                </tr>
+                </table>
         </body>
         </html>      
       `));
